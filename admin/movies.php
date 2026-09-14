@@ -33,7 +33,7 @@ $pageTitle = 'Manage Movies — AfrikaFlix'; require __DIR__ . '/../partials/hea
     </div>
 
     <label>Poster — Upload from PC
-        <input name="poster_file" type="file" accept="image/jpeg,image/png,image/webp">
+        <input name="poster_file" type="file" accept="image/*">
         <small>Option 1: Choose a poster image from your computer.</small>
     </label>
 
@@ -43,8 +43,8 @@ $pageTitle = 'Manage Movies — AfrikaFlix'; require __DIR__ . '/../partials/hea
     </label>
 
     <label>Movie — Upload from PC
-        <input name="video_file" type="file" accept="video/mp4,video/webm,video/quicktime">
-        <small>Option 1: Choose the movie file directly from your computer.</small>
+        <input name="video_file" type="file">
+        <small>Option 1: Choose the movie file directly from your computer. All files will be visible in the file picker; the server will validate the video format after upload.</small>
     </label>
 
     <label>OR Movie URL
