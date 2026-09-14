@@ -1,4 +1,4 @@
-name: Deploy AfrikaFlix to InfinityFree
+ name: Deploy AfrikaFlix to InfinityFree
 
 on:
   push:
