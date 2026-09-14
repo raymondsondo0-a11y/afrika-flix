@@ -28,4 +28,5 @@ jobs:
             **/.git*
             **/.github/**
             **/private/config.php
-            **/uploads/**
+            **/uploads/movies/**
+            **/uploads/posters/**
