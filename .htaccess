@@ -1,0 +1,11 @@
+Options -Indexes
+
+<FilesMatch "^(config\.php|bootstrap\.php|config\.example\.php)$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "^\.(?!well-known)">
+    Require all denied
+</FilesMatch>
+
+DirectoryIndex index.php
