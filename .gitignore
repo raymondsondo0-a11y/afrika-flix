@@ -1,9 +1,11 @@
 # Server-only configuration
 private/config.php
 
-# Uploaded media
-uploads/*
-!uploads/.gitkeep
+# Uploaded media: files stay on InfinityFree and are never committed to GitHub
+uploads/movies/*
+!uploads/movies/.gitkeep
+uploads/posters/*
+!uploads/posters/.gitkeep
 
 # Local/runtime files
 .DS_Store
