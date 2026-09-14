@@ -1,9 +1,16 @@
 <?php
 require __DIR__ . '/../private/bootstrap.php'; require_admin();
 
+// This endpoint is for form submissions only. If someone opens the URL directly,
+// send them back to the movie manager instead of showing a misleading title error.
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: movies.php');
+    exit;
+}
+
 $id=(int)($_POST['id']??0);
 $title=trim($_POST['title']??'');
-if ($title==='') exit('Title is required.');
+if ($title==='') exit('Please enter the movie title before saving.');
 
 $slug=trim($_POST['slug']??'');
 if($slug==='') $slug=strtolower(trim(preg_replace('/[^a-z0-9]+/i','-', $title),'-'));
