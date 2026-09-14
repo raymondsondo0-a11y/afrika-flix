@@ -1,0 +1,11 @@
+# Server-only configuration
+private/config.php
+
+# Uploaded media
+uploads/*
+!uploads/.gitkeep
+
+# Local/runtime files
+.DS_Store
+Thumbs.db
+*.log
