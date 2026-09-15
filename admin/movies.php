@@ -1,26 +1,42 @@
 <?php
-require __DIR__ . '/../private/bootstrap.php'; require_admin();
+require __DIR__ . '/../private/bootstrap.php';
+require_admin();
 
 $editId = (int)($_GET['edit'] ?? 0);
-$movie = ['id'=>0,'title'=>'','slug'=>'','description'=>'','genre'=>'','year'=>'','poster_url'=>'','video_url'=>'','featured'=>0];
+$movie = [
+    'id'=>0,
+    'title'=>'',
+    'slug'=>'',
+    'description'=>'',
+    'genre'=>'',
+    'year'=>'',
+    'poster_url'=>'',
+    'video_url'=>'',
+    'featured'=>0
+];
+
 if ($editId) {
-    $s=$pdo->prepare('SELECT * FROM movies WHERE id=?');
+    $s = $pdo->prepare('SELECT * FROM movies WHERE id=?');
     $s->execute([$editId]);
-    $movie=$s->fetch() ?: $movie;
+    $movie = $s->fetch() ?: $movie;
 }
+
 $movies = $pdo->query('SELECT * FROM movies ORDER BY created_at DESC')->fetchAll();
-$pageTitle = 'Manage Movies — AfrikaFlix'; require __DIR__ . '/../partials/header.php';
+$pageTitle = 'Manage Movies — AfrikaFlix';
+require __DIR__ . '/../partials/header.php';
 ?>
 <div class="admin-top">
     <div><p class="eyebrow">LIBRARY</p><h1><?= $editId ? 'Edit movie' : 'Add movie' ?></h1></div>
     <a class="button ghost" href="index.php">Dashboard</a>
 </div>
 
-<form class="movie-form" method="post" action="save_movie.php" enctype="multipart/form-data">
+<form class="movie-form" method="post" action="save_movie.php" enctype="multipart/form-data" id="movieForm">
     <input type="hidden" name="id" value="<?= (int)$movie['id'] ?>">
+    <!-- Keep a second copy of the title so the save endpoint can verify the browser sent it. -->
+    <input type="hidden" name="movie_title" id="movie_title_hidden" value="<?= e($movie['title']) ?>">
 
     <label>Title
-        <input name="title" required value="<?= e($movie['title']) ?>">
+        <input name="title" id="movie_title" required autocomplete="off" value="<?= e($movie['title']) ?>">
     </label>
 
     <label>Slug
@@ -44,7 +60,7 @@ $pageTitle = 'Manage Movies — AfrikaFlix'; require __DIR__ . '/../partials/hea
 
     <label>Movie — Upload from PC
         <input name="video_file" type="file">
-        <small>Option 1: Choose the movie file directly from your computer. All files will be visible in the file picker; the server will validate the video format after upload.</small>
+        <small>Choose the movie directly from your computer. All files are visible; the server validates the video after upload.</small>
     </label>
 
     <label>OR Movie URL
@@ -57,7 +73,7 @@ $pageTitle = 'Manage Movies — AfrikaFlix'; require __DIR__ . '/../partials/hea
             <strong>Existing media</strong>
             <?php if (!empty($movie['poster_url'])): ?><div>Poster: <?= e($movie['poster_url']) ?></div><?php endif; ?>
             <?php if (!empty($movie['video_url'])): ?><div>Movie: <?= e($movie['video_url']) ?></div><?php endif; ?>
-            <small>When editing, leave an upload field empty to keep the current media. Uploading a replacement will replace the old local file.</small>
+            <small>When editing, leave an upload field empty to keep the current media.</small>
         </div>
     <?php endif; ?>
 
@@ -66,6 +82,23 @@ $pageTitle = 'Manage Movies — AfrikaFlix'; require __DIR__ . '/../partials/hea
 
     <button class="button" type="submit">Save movie</button>
 </form>
+
+<script>
+(function () {
+    const form = document.getElementById('movieForm');
+    const title = document.getElementById('movie_title');
+    const hidden = document.getElementById('movie_title_hidden');
+    if (!form || !title || !hidden) return;
+
+    title.addEventListener('input', function () {
+        hidden.value = title.value;
+    });
+
+    form.addEventListener('submit', function () {
+        hidden.value = title.value;
+    });
+})();
+</script>
 
 <div class="section-head"><h2>All movies</h2><span><?= count($movies) ?></span></div>
 <div class="admin-list">
