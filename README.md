@@ -1,23 +1,30 @@
-# AfrikaFlix
+# Social Media Ad Scheduler & Cost Planner — Mbeya Template
 
-Clean PHP/MySQL movie-library project for InfinityFree.
+Swahili-first campaign calendar for small businesses, designed for InfinityFree shared hosting.
 
-## Important security rules
+## Stack
+- PHP 8.1+ with PDO; no Composer or Node.js
+- MySQL via phpMyAdmin
+- Tailwind CSS CDN and FullCalendar 6 CDN; local CSS in style.css
 
-- Never commit `private/config.php`.
-- Never put database passwords, API keys, FTP passwords, or other secrets in GitHub.
-- Only upload movies and media that you own or are legally allowed to distribute.
-- After the first successful installation, remove `setup.php` from the server and from this repository.
+## Features
+- Add, edit and confirm-delete campaigns
+- Calendar with platform colors and quick status update
+- Daily, weekly and monthly cost summaries
+- Monthly budget progress and warning at 80%+
+- Platform/status/date filters and CSV export
+- Browser notifications for campaigns in the next 30 minutes (dashboard must stay open; checks every 60 minutes)
+- Responsive layout for phones
 
-## First deployment
+## Deploy to InfinityFree
+1. In InfinityFree, open the hosting account for **ndoa.kesug.com** and create a MySQL database.
+2. Open phpMyAdmin and import `install.sql`. InfinityFree creates the database for you; do not run `CREATE DATABASE`.
+3. On the server, create `/htdocs/private/config.php` based on `db.example.php`. Enter the actual host, database name, username and password from the InfinityFree panel. Never commit credentials to GitHub.
+4. Configure GitHub Actions secrets `FTP_SERVER`, `INFINITYFREE_FTP_USERNAME`, and `INFINITYFREE_FTP_PASSWORD`. `FTP_SERVER` is the FTP hostname shown by InfinityFree, not the website domain.
+5. Push to `main` or run the Deploy workflow. It deploys to `/ndoa.kesug.com/htdocs/`.
+6. Open `https://ndoa.kesug.com/`.
 
-1. Create the MySQL database in InfinityFree.
-2. Add GitHub Actions secrets named `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, and `FTP_SERVER_DIR`.
-3. Push to `main` or manually run the Deploy workflow.
-4. Open `https://shizer.kesug.com/setup.php`.
-5. Enter the InfinityFree database credentials and create the admin account.
-6. Test the homepage and `/login.php`.
-7. Delete `setup.php` from the server and repository.
-8. Add movies from `/admin/movies.php`.
-
-The application stores database credentials in `private/config.php`, which is ignored by Git and blocked from direct web access.
+## Security and reminders
+- Public `db.php` only loads `private/config.php`; it contains no database password. The deployment workflow excludes the private folder.
+- Notifications only work while the dashboard is open in a supported browser and permission has been granted.
+- CDN calendar assets need an internet connection. Local CSS keeps the layout usable if Tailwind CDN is unavailable.
