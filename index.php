@@ -1,20 +1,26 @@
 <?php
-require __DIR__ . '/private/bootstrap.php';
-$pageTitle = 'AfrikaFlix — African Movies';
-$q = trim($_GET['q'] ?? '');
-if ($q !== '') {
-    $stmt = $pdo->prepare('SELECT * FROM movies WHERE title LIKE ? OR genre LIKE ? ORDER BY created_at DESC');
-    $like = '%' . $q . '%'; $stmt->execute([$like, $like]); $movies = $stmt->fetchAll();
-} else {
-    $movies = $pdo->query('SELECT * FROM movies ORDER BY featured DESC, created_at DESC')->fetchAll();
+declare(strict_types=1);
+session_start();
+require __DIR__.'/db.php';
+if (empty($_SESSION['csrf'])) $_SESSION['csrf']=bin2hex(random_bytes(32));
+function e($v): string { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+$settings=$pdo->query("SELECT * FROM settings WHERE id=1")->fetch() ?: ['business_name'=>'Biashara Yangu - Mbeya','monthly_budget'=>500000,'currency'=>'TZS'];
+$today=$pdo->query("SELECT COUNT(*) c, COALESCE(SUM(cost),0) total FROM campaigns WHERE post_date=CURDATE() AND status!='Cancelled'")->fetch();
+$week=$pdo->query("SELECT COALESCE(SUM(cost),0) total FROM campaigns WHERE YEARWEEK(post_date,1)=YEARWEEK(CURDATE(),1) AND status!='Cancelled'")->fetch();
+$month=$pdo->query("SELECT COUNT(*) c, COALESCE(SUM(cost),0) total FROM campaigns WHERE YEAR(post_date)=YEAR(CURDATE()) AND MONTH(post_date)=MONTH(CURDATE()) AND status!='Cancelled'")->fetch();
+$counts=$pdo->query("SELECT status,COUNT(*) total FROM campaigns GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
+$budget=(int)$settings['monthly_budget']; $spent=(int)$month['total']; $pct=$budget>0?round($spent/$budget*100,1):0; $bar=$pct>=80?'red':($pct>50?'yellow':'green');
+$filters=['platform'=>trim($_GET['platform']??''),'status'=>trim($_GET['status']??''),'from'=>trim($_GET['from']??''),'to'=>trim($_GET['to']??'')];
+$platforms=['Facebook','Instagram','TikTok','WhatsApp','YouTube'];
+$statuses=['Scheduled','Done','Cancelled'];
+if(isset($_GET['export']) && $_GET['export']==='csv') {
+  $stmt=$pdo->prepare("SELECT campaign_name,platform,post_date,post_time,cost,type,status,notes FROM campaigns WHERE (?='' OR platform=?) AND (?='' OR status=?) AND (?='' OR post_date>=?) AND (?='' OR post_date<=?) ORDER BY post_date,post_time");
+  $stmt->execute([$filters['platform'],$filters['platform'],$filters['status'],$filters['status'],$filters['from'],$filters['from'],$filters['to'],$filters['to']]);
+  header('Content-Type: text/csv; charset=utf-8'); header('Content-Disposition: attachment; filename="matangazo.csv"');
+  $out=fopen('php://output','w'); fputcsv($out,['Jina','Jukwaa','Tarehe','Muda','Gharama TZS','Aina','Hali','Maelezo']);
+  while($r=$stmt->fetch(PDO::FETCH_NUM)) fputcsv($out,$r); fclose($out); exit;
 }
-$featured = array_values(array_filter($movies, fn($m) => (int)$m['featured'] === 1));
-require __DIR__ . '/partials/header.php';
-?>
-<section class="hero"><div><p class="eyebrow">AFRICAN ENTERTAINMENT</p><h1>Stories from Africa.<br><span>Made for everyone.</span></h1><p>Discover movies, stories and entertainment in one clean, fast library.</p><form class="search" method="get"><input name="q" value="<?= e($q) ?>" placeholder="Search movies or genres..."><button>Search</button></form></div></section>
-<section class="section-head"><h2><?= $q !== '' ? 'Search results' : 'Latest movies' ?></h2><span><?= count($movies) ?> titles</span></section>
-<div class="movie-grid">
-<?php foreach ($movies as $movie): ?><article class="movie-card"><a href="watch.php?id=<?= (int)$movie['id'] ?>"><div class="poster"><?php if (!empty($movie['poster_url'])): ?><img src="<?= e($movie['poster_url']) ?>" alt="<?= e($movie['title']) ?>"><?php else: ?><span><?= e(strtoupper(substr($movie['title'],0,1))) ?></span><?php endif; ?></div><div class="movie-info"><h3><?= e($movie['title']) ?></h3><p><?= e($movie['genre'] ?: 'African film') ?><?= $movie['year'] ? ' • '.(int)$movie['year'] : '' ?></p></div></a></article><?php endforeach; ?>
-</div>
-<?php if (!$movies): ?><div class="empty"><h2>No movies yet</h2><p>Log in to the admin area and add your first title.</p></div><?php endif; ?>
-<?php require __DIR__ . '/partials/footer.php'; ?>
+?><!doctype html><html lang="sw"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title><?=e($settings['business_name'])?> — Ratiba ya Matangazo</title><script src="https://cdn.tailwindcss.com"></script><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css"><script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script><link rel="stylesheet" href="style.css"></head><body><header class="topbar"><div class="container headrow"><div><p class="eyebrow">MBEYA BUSINESS TOOLS</p><h1><?=e($settings['business_name'])?></h1><p class="subhead">Panga matangazo yako. Dhibiti gharama. Fuatilia bajeti.</p></div><nav><a class="btn btn-light" href="settings.php">⚙️ Mipangilio</a><a class="btn btn-primary" href="add.php">＋ Ongeza Tangazo</a></nav></div></header><main class="container space-y-6">
+<section class="stats-grid"><article class="stat"><span>Matangazo ya leo</span><strong><?= (int)$today['c'] ?></strong><small>Gharama: TZS <?=number_format((int)$today['total'])?></small></article><article class="stat"><span>Gharama za wiki</span><strong>TZS <?=number_format((int)$week['total'])?></strong><small>Wiki hii</small></article><article class="stat"><span>Gharama za mwezi</span><strong>TZS <?=number_format($spent)?></strong><small><?= (int)$month['c'] ?> matangazo mwezi huu</small></article><article class="stat"><span>Ratiba</span><strong><?= (int)($counts['Scheduled']??0) ?></strong><small>Yamekamilika: <?= (int)($counts['Done']??0) ?> · Yamefutwa: <?= (int)($counts['Cancelled']??0) ?></small></article></section>
+<section class="panel budget-panel"><div class="budget-head"><div><p class="eyebrow">BAJETI YA MWEZI</p><h2>TZS <?=number_format($spent)?> <span>/ TZS <?=number_format($budget)?></span></h2></div><div class="budget-pct"><?=$pct?>%</div></div><div class="progress"><div class="progress-fill <?=$bar?>" style="width:<?=min(100,max(0,$pct))?>%"></div></div><div class="budget-foot"><span>Salio: <b class="<?=($budget-$spent)<0?'text-red':''?>">TZS <?=number_format($budget-$spent)?></b></span><?php if($pct>=80):?><strong class="warning">⚠ UMEPITILIZA BUDGET! <?= $pct>=100?'Bajeti imezidi.':'Umetumia angalau 80% ya bajeti.' ?></strong><?php else:?><span>Matumizi ya bajeti yako</span><?php endif;?></div></section>
+<section class="panel"><div class="section-title"><div><p class="eyebrow">RATIBA</p><h2>Kalenda ya matangazo</h2></div><span class="hint">Bonyeza tangazo kuhariri · Tumia kitufe cha ✓ kulikamilisha</span></div><form class="filters" method="get"><label>Jukwaa<select name="platform"><option value="">Majukwaa yote</option><?php foreach($platforms as $p):?><option <?= $filters['platform']===$p?'selected':'' ?>><?=e($p)?></option><?php endforeach;?></select></label><label>Hali<select name="status"><option value="">Hali zote</option><?php foreach($statuses as $s):?><option <?= $filters['status']===$s?'selected':'' ?>><?=e($s)?></option><?php endforeach;?></select></label><label>Kuanzia<input type="date" name="from" value="<?=e($filters['from'])?>"></label><label>Mpaka<input type="date" name="to" value="<?=e($filters['to'])?>"></label><button class="btn btn-dark">Chuja</button><a class="btn btn-light" href="index.php">Futa vichujio</a><button class="btn btn-green" name="export" value="csv">⇩ Export CSV</button></form><div id="calendar" data-platform="<?=e($filters['platform'])?>" data-status="<?=e($filters['status'])?>" data-from="<?=e($filters['from'])?>" data-to="<?=e($filters['to'])?>"></div><div class="legend"><?php foreach(['Facebook'=>'#1877F2','Instagram'=>'#E4405F','TikTok'=>'#000000','WhatsApp'=>'#25D366','YouTube'=>'#FF0000'] as $name=>$color):?><span><i style="background:<?=$color?>"></i><?=e($name)?></span><?php endforeach;?></div></section><p class="footer-note">Kumbuka: vikumbusho vya kivinjari hufanya kazi wakati dashboard iko wazi na ruhusa ya Notifications imeruhusiwa.</p></main><script src="script.js"></script></body></html>
