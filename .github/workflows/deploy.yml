@@ -29,3 +29,10 @@ jobs:
             **/private/**
             **/uploads/**
             **/vendor/**
+            **/setup.php
+            **/login.php
+            **/watch.php
+            **/logout.php
+            **/admin/**
+            **/partials/**
+            **/assets/**
