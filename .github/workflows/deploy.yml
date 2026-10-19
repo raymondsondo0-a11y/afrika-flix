@@ -21,7 +21,7 @@ jobs:
           server-dir: /ndoa.kesug.com/htdocs/
           protocol: ftp
           port: 21
-          dangerous-clean-slate: false
+          dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/.github/**
